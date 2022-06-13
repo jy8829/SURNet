@@ -1,5 +1,5 @@
 # SURNet
-code for the paper Fish Detection and Segmentation using Convolutional Neural Networks with Limited Training Data
+code for the paper "Fish Detection and Segmentation using Convolutional Neural Networks with Limited Training Data"
 
 ### Quick start
 Install dependencies
