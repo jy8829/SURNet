@@ -9,14 +9,7 @@ from PIL import Image
 from utils.data_utils import getPaths
 from utils.measure_utils import db_eval_boundary, IoU_bin
 
-## experiment directories
-# obj_cat = "SUIM_res_v1_se_aspp/" # sub-dir  ["RI/", "FV/", "WR/", "RO/", "HD/"]
-# test_dir = "data/test/masks/"
 real_mask_dir = "../dataset/clownfish_v2/test/BW/"
-#test_dir = "/mnt/data1/ImageSeg/suim/TEST/masks/"
-# real_mask_dir = test_dir # real labels
-# gen_mask_dir = "data/test/output/" + obj_cat # generated labels
-# gen_mask_dir = '../UNet3plus_pth/test/'
 gen_mask_dir = '../transunet_pytorch/results/TransUnet_result/'
 ## input/output shapes
 im_res = (320, 240)

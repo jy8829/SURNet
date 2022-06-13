@@ -1,6 +1,4 @@
 import tensorflow as tf
-# import keras
-# print(keras.__version_)
 from keras.models import Input, Model
 from keras.layers.convolutional import UpSampling2D, Conv2D
 from keras.layers import BatchNormalization, Activation, MaxPooling2D, GlobalAveragePooling2D, DepthwiseConv2D, AveragePooling2D
@@ -12,23 +10,20 @@ from .lovasz import lovasz_loss
 from .losses import *
 
 def surblock(layer_input, skip_input, filters, f_size=3):
-    ## for upsampling
+
     skip = squeeze_excite_block(skip_input)
     up = UpSampling2D(size=2)(layer_input)
     up = squeeze_excite_block(up)
     cat = Concatenate()([up, skip])
-    # cat = BatchNormalization(momentum=0.8)(cat)
     cat = Conv2D(filters, kernel_size=3, strides=1, padding='same', activation='relu')(cat)
-    cat = BatchNormalization(momentum=0.8)(cat) ###
-    # cat = squeeze_excite_block(cat)
+    cat = BatchNormalization(momentum=0.8)(cat) 
+    
     fusion = Conv2D(filters, kernel_size=f_size, strides=1, padding='same', activation='relu')(cat)
-    # fusion = BatchNormalization(momentum=0.8)(fusion)  ###
+    
     fusion = Conv2D(filters, kernel_size=f_size, strides=1, padding='same', activation='relu')(fusion)
     fusion = BatchNormalization(momentum=0.8)(fusion)
 
     res = add([cat, fusion])
-    # res = BatchNormalization(momentum=0.8)(res)
-    # res = BatchNormalization(momentum=0.8)(res)
     return res
 
 def myUpSample2X(layer_input, skip_input, filters, f_size=3):
@@ -57,8 +52,6 @@ def squeeze_excite_block(input, ratio=16):
     se = Dense(filters // ratio, activation='relu', kernel_initializer='he_normal', use_bias=False)(se)
     se = Dense(filters, activation='sigmoid', kernel_initializer='he_normal', use_bias=False)(se)
 
-    # if K.image_data_format() == 'channels_first':
-    # se = Permute((3, 1, 2))(se)
 
     x = multiply([init, se])
     return x
@@ -74,13 +67,7 @@ def resdiual_block(input, num_filters = 16):
 
 class RUSnet():
     
-    """ 
-       The SUIM-Net model (Fig. 5 in the paper)
-        - base = 'RSB' for RSB-based encoder (Fig. 5b)
-        - base = 'VGG' for 12-layer VGG-16 encoder (Fig. 5c)
-    """
     
-
     def __init__(self, im_res=(320, 240, 3), n_classes=5):
         
         def loss_chose():
@@ -122,78 +109,22 @@ class RUSnet():
         conv4 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(pool3)
         conv4 = Conv2D(512, 3, activation = 'relu', padding = 'same', kernel_initializer = 'he_normal')(conv4)
         pool4 = MaxPooling2D(pool_size=(2, 2))(conv4)
-        # +++++++++++ (?, 120, 160, 64)
-        # +++++++++++ (?, 60, 80, 128)
-        # +++++++++++ (?, 30, 40, 256)
-        # +++++++++++ (?, 15, 20, 512)
-        ## decoder
-        # add se block ->v1_se
-        # pool3_se = squeeze_excite_block(pool3)  
-
-        # pool4_up = UpSampling2D(size=2)(pool4) 
-        # merge4_3 = Concatenate()([pool3_se, pool4_up])
-        # merge4_3 = Conv2D(256, kernel_size = 3, strides = 1, padding='same', activation='relu')(merge4_3)
-        # merge4_3 = BatchNormalization(momentum=0.8)(merge4_3)
-        # # print('-------------------------', merge4_3.shape)
-        # merge4_3 = resdiual_block(merge4_3, num_filters = 256)
 
         merge4_3 = surblock(pool4, pool3, 256)
-        # merge4_3 = squeeze_excite_block(merge4_3)
         dec1 = surblock(pool4, merge4_3, 512) # 64, 64, 768
-        # dec1 = squeeze_excite_block(dec1)
-        # print('----------', dec1.shape)
 
-        # add se block ->v1_se
-        # pool2_se = squeeze_excite_block(pool2)
-        
-        # pool3_up = UpSampling2D(size=2)(pool3) 
-        # merge3_2 = Concatenate()([pool2_se, pool3_up])
-        # merge3_2 = Conv2D(128, kernel_size = 3, strides = 1, padding='same', activation='relu')(merge3_2)
-        # merge3_2 = BatchNormalization(momentum=0.8)(merge3_2)  
-        # merge3_2 = resdiual_block(merge3_2, num_filters =128)
         merge3_2 = surblock(pool3, pool2, 128)
-        # merge3_2 = squeeze_excite_block(merge3_2)
         dec2 = surblock(dec1, merge3_2, 256) # 128, 128, 384
-        # dec2 = squeeze_excite_block(dec2)
-        # print('----------', dec2.shape)
 
-        # add se block ->v1_se
-        # pool1_se = squeeze_excite_block(pool1)
-        
-        # pool2_up = UpSampling2D(size=2)(pool2) 
-        # merge2_1 = Concatenate()([pool1_se, pool2_up])
-        # merge2_1 = Conv2D(64, kernel_size = 3, strides = 1, padding='same', activation='relu')(merge2_1)
-        # merge2_1 = BatchNormalization(momentum=0.8)(merge2_1)  
-        # merge2_1 = resdiual_block(merge2_1, num_filters = 64)
         merge2_1 = surblock(pool2, pool1, 64)
-        # merge2_1 = squeeze_excite_block(merge2_1)
         dec3 = surblock(dec2, merge2_1, 128) # 256, 256, 192
-        # dec3 = squeeze_excite_block(dec3)
-        # print('----------', dec3.shape)
-
 
         dec4 = UpSampling2D(size=2)(dec3)     # 512, 512, 192
-       
-        # dec4 = squeeze_excite_block(dec4)
-        # dec4 = Conv2D(64, kernel_size = 3, strides = 1, padding='same', activation='relu')(dec4)
-        # dec4 = Conv2D(64, kernel_size = 3, strides = 1, padding='same', activation='relu')(dec4)
-        # dec4 = Conv2D(2, kernel_size = 3, strides = 1, padding='same', activation='relu')(dec4)
-        # print('----------', dec4.shape)
-        
-
-        ## return output layer
         out = Conv2D(n_classes, (3, 3), padding='same', activation='sigmoid', name='output')(dec4)
 
         return Model(inputs, out)
 
 class RUSnet_vgg16():
-    
-    """ 
-       The SUIM-Net model (Fig. 5 in the paper)
-        - base = 'RSB' for RSB-based encoder (Fig. 5b)
-        - base = 'VGG' for 12-layer VGG-16 encoder (Fig. 5c)
-    """
-    
 
     def __init__(self, im_res=(320, 240, 3), n_classes=5):
         
@@ -229,86 +160,25 @@ class RUSnet_vgg16():
             layer.trainable = True
         # encoder
         pool1 = vgg.get_layer('block1_pool').output # 256, 256, 64 
-        # print('+++++++++++', pool1.shape)
         pool2 = vgg.get_layer('block2_pool').output # 128, 128, 128
-        # print('+++++++++++', pool2.shape)
         pool3 = vgg.get_layer('block3_pool').output # 64, 64, 256
-        # print('+++++++++++', pool3.shape)
         pool4 = vgg.get_layer('block4_pool').output # 32, 32, 512
-        # print('+++++++++++', pool4.shape)
-        # print('+++++++++++', pool4.shape)
-        ## decoder
-        # # add se block ->v1_se
-        # pool3_se = squeeze_excite_block(pool3)  
-
-        # pool4_up = UpSampling2D(size=2)(pool4) 
-        # merge4_3 = Concatenate()([pool3_se, pool4_up])
-        # merge4_3 = Conv2D(256, kernel_size = 3, strides = 1, padding='same', activation='relu')(merge4_3)
-        # merge4_3 = BatchNormalization(momentum=0.8)(merge4_3)
-        # # print('-------------------------', merge4_3.shape)
-        # merge4_3 = resdiual_block(merge4_3, num_filters = 256)
-        # dec1 = myUpSample2X(pool4, merge4_3, 512) # 64, 64, 768
-
 
         merge4_3 = surblock(pool4, pool3, 256)
-        # merge4_3 = squeeze_excite_block(merge4_3)
         dec1 = surblock(pool4, merge4_3, 512)
-        # dec1 = squeeze_excite_block(dec1)
-        # print('----------', dec1.shape)
 
-        # add se block ->v1_se
-        # pool2_se = squeeze_excite_block(pool2)
-        
-        # pool3_up = UpSampling2D(size=2)(pool3) 
-        # merge3_2 = Concatenate()([pool2_se, pool3_up])
-        # merge3_2 = Conv2D(128, kernel_size = 3, strides = 1, padding='same', activation='relu')(merge3_2)
-        # merge3_2 = BatchNormalization(momentum=0.8)(merge3_2)  
-        # merge3_2 = resdiual_block(merge3_2, num_filters =128)
-        # dec2 = myUpSample2X(dec1, merge3_2, 256) # 128, 128, 384
         merge3_2 = surblock(pool3, pool2, 128)
-        # merge3_2 = squeeze_excite_block(merge3_2)
         dec2 = surblock(dec1, merge3_2, 256) # 128, 128, 384
-        # dec2 = squeeze_excite_block(dec2)
-        # print('----------', dec2.shape)
 
-        # add se block ->v1_se
-        # pool1_se = squeeze_excite_block(pool1)
-        
-        # pool2_up = UpSampling2D(size=2)(pool2) 
-        # merge2_1 = Concatenate()([pool1_se, pool2_up])
-        # merge2_1 = Conv2D(64, kernel_size = 3, strides = 1, padding='same', activation='relu')(merge2_1)
-        # merge2_1 = BatchNormalization(momentum=0.8)(merge2_1)  
-        # merge2_1 = resdiual_block(merge2_1, num_filters = 64)
-        # dec3 = myUpSample2X(dec2, merge2_1, 128) # 256, 256, 192
         merge2_1 = surblock(pool2, pool1, 64)
-        # merge2_1 = squeeze_excite_block(merge2_1)
         dec3 = surblock(dec2, merge2_1, 128) # 256, 256, 192
-        # dec3 = squeeze_excite_block(dec3)
-        # print('----------', dec3.shape)
-
 
         dec4 = UpSampling2D(size=2)(dec3)     # 512, 512, 192
-        # dec4 = squeeze_excite_block(dec4)
-        # dec4 = squeeze_excite_block(dec4)
-        # dec4 = Conv2D(64, kernel_size = 3, strides = 1, padding='same', activation='relu')(dec4)
-        # dec4 = Conv2D(64, kernel_size = 3, strides = 1, padding='same', activation='relu')(dec4)
-        # dec4 = Conv2D(2, kernel_size = 3, strides = 1, padding='same', activation='relu')(dec4)
-        # print('----------', dec4.shape)
-        
-
-        ## return output layer
         out = Conv2D(n_classes, (3, 3), padding='same', activation='sigmoid', name='output')(dec4)
 
         return Model(vgg.input, out)
 
 class RUSnet_vgg19():
-    """ 
-       The SUIM-Net model (Fig. 5 in the paper)
-        - base = 'RSB' for RSB-based encoder (Fig. 5b)
-        - base = 'VGG' for 12-layer VGG-16 encoder (Fig. 5c)
-    """
-    
-
     def __init__(self, im_res=(320, 240, 3), n_classes=5):
         def loss_chose():
             from config import args_setting
@@ -338,78 +208,26 @@ class RUSnet_vgg19():
         vgg.trainable = True
         for layer in vgg.layers:
             layer.trainable = True
-        # print(vgg.summary())
-        # encoder
         pool1 = vgg.get_layer('block1_pool').output # 256, 256, 64 
-        # print('+++++++++++', pool1.shape)
         pool2 = vgg.get_layer('block2_pool').output # 128, 128, 128
-        # print('+++++++++++', pool2.shape)
         pool3 = vgg.get_layer('block3_pool').output # 64, 64, 256
-        # print('+++++++++++', pool3.shape)
         pool4 = vgg.get_layer('block4_pool').output # 32, 32, 512
-        # print('+++++++++++', pool4.shape)
-        # print('+++++++++++', pool4.shape)
-        ## decoder
-        # add se block ->v1_se
-        # pool3_se = squeeze_excite_block(pool3)  
 
-        # pool4_up = UpSampling2D(size=2)(pool4) 
-        # merge4_3 = Concatenate()([pool3_se, pool4_up])
-        # merge4_3 = Conv2D(256, kernel_size = 3, strides = 1, padding='same', activation='relu')(merge4_3)
-        # merge4_3 = BatchNormalization(momentum=0.8)(merge4_3)
-        # # print('-------------------------', merge4_3.shape)
-        # merge4_3 = resdiual_block(merge4_3, num_filters = 256)
         merge4_3 = surblock(pool4, pool3, 256)
         dec1 = surblock(pool4, merge4_3, 512) # 64, 64, 768
-        # dec1 = squeeze_excite_block(dec1)
-        # print('----------', dec1.shape)
 
-        # add se block ->v1_se
-        # pool2_se = squeeze_excite_block(pool2)
-        
-        # pool3_up = UpSampling2D(size=2)(pool3) 
-        # merge3_2 = Concatenate()([pool2_se, pool3_up])
-        # merge3_2 = Conv2D(128, kernel_size = 3, strides = 1, padding='same', activation='relu')(merge3_2)
-        # merge3_2 = BatchNormalization(momentum=0.8)(merge3_2)  
-        # merge3_2 = resdiual_block(merge3_2, num_filters =128)
         merge3_2 = surblock(pool3, pool2, 128)
         dec2 = surblock(dec1, merge3_2, 256) # 128, 128, 384
-        # dec2 = squeeze_excite_block(dec2)
-        # print('----------', dec2.shape)
 
-        # add se block ->v1_se
-        # pool1_se = squeeze_excite_block(pool1)
-        
-        # pool2_up = UpSampling2D(size=2)(pool2) 
-        # merge2_1 = Concatenate()([pool1_se, pool2_up])
-        # merge2_1 = Conv2D(64, kernel_size = 3, strides = 1, padding='same', activation='relu')(merge2_1)
-        # merge2_1 = BatchNormalization(momentum=0.8)(merge2_1)  
-        # merge2_1 = resdiual_block(merge2_1, num_filters = 64)
         merge2_1 = surblock(pool2, pool1, 64)
         dec3 = surblock(dec2, merge2_1, 128) # 256, 256, 192
-        # dec3 = squeeze_excite_block(dec3)
-        # print('----------', dec3.shape)
 
 
         dec4 = UpSampling2D(size=2)(dec3)     # 512, 512, 192
-        # dec4 = squeeze_excite_block(dec4)
-        # dec4 = Conv2D(64, kernel_size = 3, strides = 1, padding='same', activation='relu')(dec4)
-        # dec4 = Conv2D(64, kernel_size = 3, strides = 1, padding='same', activation='relu')(dec4)
-        # dec4 = Conv2D(2, kernel_size = 3, strides = 1, padding='same', activation='relu')(dec4)
-        # print('----------', dec4.shape)
-        
-
-        ## return output layer
         out = Conv2D(n_classes, (3, 3), padding='same', activation='sigmoid', name='output')(dec4)
 
         return Model(vgg.input, out)
 class RUSnet_resnet50():
-    """ 
-       The SUIM-Net model (Fig. 5 in the paper)
-        - base = 'RSB' for RSB-based encoder (Fig. 5b)
-        - base = 'VGG' for 12-layer VGG-16 encoder (Fig. 5c)
-    """
-    
 
     def __init__(self, im_res=(320, 240, 3), n_classes=5):
         def loss_chose():
@@ -440,74 +258,24 @@ class RUSnet_resnet50():
         resnet50.trainable = True
         for layer in resnet50.layers:
             layer.trainable = True
-        # print(resnet50.summary())
-        # input()
-        # encoder
+
         pool1 = resnet50.get_layer('activation_1').output # 256, 256, 64 
-        # print('+++++++++++', pool1.shape)
         pool2 = resnet50.get_layer('activation_10').output # 128, 128, 128
-        # print('+++++++++++', pool2.shape)
         pool3 = resnet50.get_layer('activation_22').output # 64, 64, 256
-        # print('+++++++++++', pool3.shape)
         pool4 = resnet50.get_layer('activation_40').output # 32, 32, 512
-        # print('+++++++++++', pool4.shape)
-        # print('+++++++++++', pool4.shape)
-        # +++++++++++ (?, 120, 160, 64)
-        # +++++++++++ (?, 60, 80, 128)
-        # +++++++++++ (?, 30, 40, 256)
-        # +++++++++++ (?, 15, 20, 512)
 
-        ## decoder
-        # add se block ->v1_se
-        # pool3_se = squeeze_excite_block(pool3)  
-
-        # pool4_up = UpSampling2D(size=2)(pool4) 
-        # merge4_3 = Concatenate()([pool3_se, pool4_up])
-        # merge4_3 = Conv2D(256, kernel_size = 3, strides = 1, padding='same', activation='relu')(merge4_3)
-        # merge4_3 = BatchNormalization(momentum=0.8)(merge4_3)
-        # # print('-------------------------', merge4_3.shape)
-        # merge4_3 = resdiual_block(merge4_3, num_filters = 256)
         merge4_3 = surblock(pool4, pool3, 256)
         dec1 = surblock(pool4, merge4_3, 512) # 64, 64, 768
-        # dec1 = squeeze_excite_block(dec1)
-        # print('----------', dec1.shape)
 
-        # add se block ->v1_se
-        # pool2_se = squeeze_excite_block(pool2)
-        
-        # pool3_up = UpSampling2D(size=2)(pool3) 
-        # merge3_2 = Concatenate()([pool2, pool3_up])
-        # merge3_2 = Conv2D(128, kernel_size = 3, strides = 1, padding='same', activation='relu')(merge3_2)
-        # merge3_2 = BatchNormalization(momentum=0.8)(merge3_2)  
-        # merge3_2 = resdiual_block(merge3_2, num_filters =128)
         merge3_2 = surblock(pool3, pool2, 128)
         dec2 = surblock(dec1, merge3_2, 256) # 128, 128, 384
-        # dec2 = squeeze_excite_block(dec2)
-        # print('----------', dec2.shape)
 
-        # add se block ->v1_se
-        # pool1_se = squeeze_excite_block(pool1)
-        
-        # pool2_up = UpSampling2D(size=2)(pool2) 
-        # merge2_1 = Concatenate()([pool1, pool2_up])
-        # merge2_1 = Conv2D(64, kernel_size = 3, strides = 1, padding='same', activation='relu')(merge2_1)
-        # merge2_1 = BatchNormalization(momentum=0.8)(merge2_1)  
-        # merge2_1 = resdiual_block(merge2_1, num_filters = 64)
         merge2_1 = surblock(pool2, pool1, 64)
         dec3 = surblock(dec2, merge2_1, 128) # 256, 256, 192
-        # dec3 = squeeze_excite_block(dec3)
-        # print('----------', dec3.shape)
+
 
 
         dec4 = UpSampling2D(size=2)(dec3)     # 512, 512, 192
-        # dec4 = squeeze_excite_block(dec4)
-        # dec4 = Conv2D(64, kernel_size = 3, strides = 1, padding='same', activation='relu')(dec4)
-        # dec4 = Conv2D(64, kernel_size = 3, strides = 1, padding='same', activation='relu')(dec4)
-        # dec4 = Conv2D(2, kernel_size = 3, strides = 1, padding='same', activation='relu')(dec4)
-        # print('----------', dec4.shape)
-        
-
-        ## return output layer
         out = Conv2D(n_classes, (3, 3), padding='same', activation='sigmoid', name='output')(dec4)
 
         return Model(resnet50.input, out)

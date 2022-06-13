@@ -1,8 +1,3 @@
-"""
-# Test script for the UNet
-    # for 5 object categories: HD, FV, RO, RI, WR 
-# See https://arxiv.org/pdf/2004.01241.pdf  
-"""
 from __future__ import print_function, division
 import os
 import ntpath
