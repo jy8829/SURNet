@@ -11,7 +11,7 @@ import keras.backend as K
 from .lovasz import lovasz_loss
 from .losses import *
 
-def UpSample(layer_input, skip_input, filters, f_size=3):
+def surblock(layer_input, skip_input, filters, f_size=3):
     ## for upsampling
     skip = squeeze_excite_block(skip_input)
     up = UpSampling2D(size=2)(layer_input)
@@ -137,9 +137,9 @@ class RUSnet():
         # # print('-------------------------', merge4_3.shape)
         # merge4_3 = resdiual_block(merge4_3, num_filters = 256)
 
-        merge4_3 = UpSample(pool4, pool3, 256)
+        merge4_3 = surblock(pool4, pool3, 256)
         # merge4_3 = squeeze_excite_block(merge4_3)
-        dec1 = UpSample(pool4, merge4_3, 512) # 64, 64, 768
+        dec1 = surblock(pool4, merge4_3, 512) # 64, 64, 768
         # dec1 = squeeze_excite_block(dec1)
         # print('----------', dec1.shape)
 
@@ -151,9 +151,9 @@ class RUSnet():
         # merge3_2 = Conv2D(128, kernel_size = 3, strides = 1, padding='same', activation='relu')(merge3_2)
         # merge3_2 = BatchNormalization(momentum=0.8)(merge3_2)  
         # merge3_2 = resdiual_block(merge3_2, num_filters =128)
-        merge3_2 = UpSample(pool3, pool2, 128)
+        merge3_2 = surblock(pool3, pool2, 128)
         # merge3_2 = squeeze_excite_block(merge3_2)
-        dec2 = UpSample(dec1, merge3_2, 256) # 128, 128, 384
+        dec2 = surblock(dec1, merge3_2, 256) # 128, 128, 384
         # dec2 = squeeze_excite_block(dec2)
         # print('----------', dec2.shape)
 
@@ -165,9 +165,9 @@ class RUSnet():
         # merge2_1 = Conv2D(64, kernel_size = 3, strides = 1, padding='same', activation='relu')(merge2_1)
         # merge2_1 = BatchNormalization(momentum=0.8)(merge2_1)  
         # merge2_1 = resdiual_block(merge2_1, num_filters = 64)
-        merge2_1 = UpSample(pool2, pool1, 64)
+        merge2_1 = surblock(pool2, pool1, 64)
         # merge2_1 = squeeze_excite_block(merge2_1)
-        dec3 = UpSample(dec2, merge2_1, 128) # 256, 256, 192
+        dec3 = surblock(dec2, merge2_1, 128) # 256, 256, 192
         # dec3 = squeeze_excite_block(dec3)
         # print('----------', dec3.shape)
 
@@ -250,9 +250,9 @@ class RUSnet_vgg16():
         # dec1 = myUpSample2X(pool4, merge4_3, 512) # 64, 64, 768
 
 
-        merge4_3 = UpSample(pool4, pool3, 256)
+        merge4_3 = surblock(pool4, pool3, 256)
         # merge4_3 = squeeze_excite_block(merge4_3)
-        dec1 = UpSample(pool4, merge4_3, 512)
+        dec1 = surblock(pool4, merge4_3, 512)
         # dec1 = squeeze_excite_block(dec1)
         # print('----------', dec1.shape)
 
@@ -265,9 +265,9 @@ class RUSnet_vgg16():
         # merge3_2 = BatchNormalization(momentum=0.8)(merge3_2)  
         # merge3_2 = resdiual_block(merge3_2, num_filters =128)
         # dec2 = myUpSample2X(dec1, merge3_2, 256) # 128, 128, 384
-        merge3_2 = UpSample(pool3, pool2, 128)
+        merge3_2 = surblock(pool3, pool2, 128)
         # merge3_2 = squeeze_excite_block(merge3_2)
-        dec2 = UpSample(dec1, merge3_2, 256) # 128, 128, 384
+        dec2 = surblock(dec1, merge3_2, 256) # 128, 128, 384
         # dec2 = squeeze_excite_block(dec2)
         # print('----------', dec2.shape)
 
@@ -280,9 +280,9 @@ class RUSnet_vgg16():
         # merge2_1 = BatchNormalization(momentum=0.8)(merge2_1)  
         # merge2_1 = resdiual_block(merge2_1, num_filters = 64)
         # dec3 = myUpSample2X(dec2, merge2_1, 128) # 256, 256, 192
-        merge2_1 = UpSample(pool2, pool1, 64)
+        merge2_1 = surblock(pool2, pool1, 64)
         # merge2_1 = squeeze_excite_block(merge2_1)
-        dec3 = UpSample(dec2, merge2_1, 128) # 256, 256, 192
+        dec3 = surblock(dec2, merge2_1, 128) # 256, 256, 192
         # dec3 = squeeze_excite_block(dec3)
         # print('----------', dec3.shape)
 
@@ -359,8 +359,8 @@ class RUSnet_vgg19():
         # merge4_3 = BatchNormalization(momentum=0.8)(merge4_3)
         # # print('-------------------------', merge4_3.shape)
         # merge4_3 = resdiual_block(merge4_3, num_filters = 256)
-        merge4_3 = UpSample(pool4, pool3, 256)
-        dec1 = UpSample(pool4, merge4_3, 512) # 64, 64, 768
+        merge4_3 = surblock(pool4, pool3, 256)
+        dec1 = surblock(pool4, merge4_3, 512) # 64, 64, 768
         # dec1 = squeeze_excite_block(dec1)
         # print('----------', dec1.shape)
 
@@ -372,8 +372,8 @@ class RUSnet_vgg19():
         # merge3_2 = Conv2D(128, kernel_size = 3, strides = 1, padding='same', activation='relu')(merge3_2)
         # merge3_2 = BatchNormalization(momentum=0.8)(merge3_2)  
         # merge3_2 = resdiual_block(merge3_2, num_filters =128)
-        merge3_2 = UpSample(pool3, pool2, 128)
-        dec2 = UpSample(dec1, merge3_2, 256) # 128, 128, 384
+        merge3_2 = surblock(pool3, pool2, 128)
+        dec2 = surblock(dec1, merge3_2, 256) # 128, 128, 384
         # dec2 = squeeze_excite_block(dec2)
         # print('----------', dec2.shape)
 
@@ -385,8 +385,8 @@ class RUSnet_vgg19():
         # merge2_1 = Conv2D(64, kernel_size = 3, strides = 1, padding='same', activation='relu')(merge2_1)
         # merge2_1 = BatchNormalization(momentum=0.8)(merge2_1)  
         # merge2_1 = resdiual_block(merge2_1, num_filters = 64)
-        merge2_1 = UpSample(pool2, pool1, 64)
-        dec3 = UpSample(dec2, merge2_1, 128) # 256, 256, 192
+        merge2_1 = surblock(pool2, pool1, 64)
+        dec3 = surblock(dec2, merge2_1, 128) # 256, 256, 192
         # dec3 = squeeze_excite_block(dec3)
         # print('----------', dec3.shape)
 
@@ -467,8 +467,8 @@ class RUSnet_resnet50():
         # merge4_3 = BatchNormalization(momentum=0.8)(merge4_3)
         # # print('-------------------------', merge4_3.shape)
         # merge4_3 = resdiual_block(merge4_3, num_filters = 256)
-        merge4_3 = UpSample(pool4, pool3, 256)
-        dec1 = UpSample(pool4, merge4_3, 512) # 64, 64, 768
+        merge4_3 = surblock(pool4, pool3, 256)
+        dec1 = surblock(pool4, merge4_3, 512) # 64, 64, 768
         # dec1 = squeeze_excite_block(dec1)
         # print('----------', dec1.shape)
 
@@ -480,8 +480,8 @@ class RUSnet_resnet50():
         # merge3_2 = Conv2D(128, kernel_size = 3, strides = 1, padding='same', activation='relu')(merge3_2)
         # merge3_2 = BatchNormalization(momentum=0.8)(merge3_2)  
         # merge3_2 = resdiual_block(merge3_2, num_filters =128)
-        merge3_2 = UpSample(pool3, pool2, 128)
-        dec2 = UpSample(dec1, merge3_2, 256) # 128, 128, 384
+        merge3_2 = surblock(pool3, pool2, 128)
+        dec2 = surblock(dec1, merge3_2, 256) # 128, 128, 384
         # dec2 = squeeze_excite_block(dec2)
         # print('----------', dec2.shape)
 
@@ -493,8 +493,8 @@ class RUSnet_resnet50():
         # merge2_1 = Conv2D(64, kernel_size = 3, strides = 1, padding='same', activation='relu')(merge2_1)
         # merge2_1 = BatchNormalization(momentum=0.8)(merge2_1)  
         # merge2_1 = resdiual_block(merge2_1, num_filters = 64)
-        merge2_1 = UpSample(pool2, pool1, 64)
-        dec3 = UpSample(dec2, merge2_1, 128) # 256, 256, 192
+        merge2_1 = surblock(pool2, pool1, 64)
+        dec3 = surblock(dec2, merge2_1, 128) # 256, 256, 192
         # dec3 = squeeze_excite_block(dec3)
         # print('----------', dec3.shape)
 
