@@ -2,7 +2,7 @@
 code for the paper "Fish Detection and Segmentation using Convolutional Neural Networks with Limited Training Data"
 
 ### Quick start
-1. dataset can get from [Here!](https://drive.google.com/file/d/1GiDg6XTCgQfQD8gkJHKiTksRjI8abRKW/view?usp=sharing)
+1. Dataset can get from [Here!](https://drive.google.com/file/d/1GiDg6XTCgQfQD8gkJHKiTksRjI8abRKW/view?usp=sharing)
 2. Install dependencies
 ```python =
 pip install -r requirement.txt
